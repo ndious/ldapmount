@@ -1,0 +1,67 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from getpass import getpass
+import getopt
+import sys
+import os
+
+def print_help():
+    return "usage: \nldapmount [--ldap-user, -l [ldap user]] [--linux-user, -u [linux user]] [--domain, -d [ldap domain]] [--host, -h [ldap host with folder to mount]] [--folder, -f [local folder]]\nldapmount [--help]\nldapmount [--remove, -r [unmount local folder]]"
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "l:u:d:h:f:", ["remove", "help", "ldap-user=", "linux-user=", "domain=", "host=", "folder="])
+    except getopt.GetoptError:
+        print print_help()
+        sys.exit(2)
+
+    remove = False
+    ldap_user = False
+    linux_user = False
+    host = False
+    folder = False
+    domain = "WORLDGROUP"
+
+    for opt, arg in opts:
+        if opt == '--help':
+            print print_help()
+            sys.exit()
+        elif opt in ('-l', '--ldap-user'):
+            ldap_user = arg
+        elif opt in ('-u', '--linux-user'):
+            linux_user = arg
+        elif opt in ('-d', '--domain'):
+            domain = arg
+        elif opt in ('-h', '--host'):
+            host = arg
+        elif opt in ('-f', '--folder'):
+            folder = arg
+        elif opt in ('-r', '--remove'):
+            remove = True
+
+    if remove is True:
+        try:
+            os.system(str("umount /mnt/%s") % (folder))
+            sys.exit(2)
+        except NameError:
+            print_help();
+
+    if ldap_user is False or linux_user is False or host is False or folder is False:
+        print print_help()
+        sys.exit(2)
+
+    try:
+        password = getpass()
+    except KeyboardInterrupt:
+        print ""
+
+    if not os.path.exists(os.path.join("/mnt", folder)):
+        os.system(str("mkdir %s" % (os.path.join("/mnt", folder))))
+
+    os.system(str("mount -t cifs  -o username=%s,password=%s,domain=%s,uid=%s //%s /mnt/%s") % (ldap_user, password, domain, linux_user, host, folder))
+
+
+
+if __name__ == '__main__':
+    main()
